@@ -4,10 +4,16 @@ check_auth();
 
 $error = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
-    $file = $_FILES['file'];
-    
-    if ($file['error'] === UPLOAD_ERR_OK) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    error_log("upload.php: POST received");
+    // Check if upload exceeded post_max_size (indicated by empty $_POST and $_FILES)
+    if (empty($_FILES) && empty($_POST) && isset($_SERVER['CONTENT_LENGTH']) && $_SERVER['CONTENT_LENGTH'] > 0) {
+        $max_post = ini_get('post_max_size');
+        $error = "File too large! Exceeds PHP post_max_size ($max_post).";
+    } elseif (isset($_FILES['file'])) {
+        $file = $_FILES['file'];
+        
+        if ($file['error'] === UPLOAD_ERR_OK) {
         $id = generate_id();
         $filename = basename($file['name']);
         $target_path = UPLOADS_DIR . $id . '_' . $filename;
@@ -36,7 +42,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
             $error = "Failed to save file.";
         }
     } else {
-        $error = "Upload error: " . $file['error'];
+        $code = $file['error'];
+        $messages = [
+            UPLOAD_ERR_INI_SIZE => "File exceeds upload_max_filesize directive in php.ini",
+            UPLOAD_ERR_FORM_SIZE => "File exceeds MAX_FILE_SIZE directive in HTML form",
+            UPLOAD_ERR_PARTIAL => "File was only partially uploaded",
+            UPLOAD_ERR_NO_FILE => "No file was uploaded",
+            UPLOAD_ERR_NO_TMP_DIR => "Missing a temporary folder",
+            UPLOAD_ERR_CANT_WRITE => "Failed to write file to disk",
+            UPLOAD_ERR_EXTENSION => "A PHP extension stopped the file upload",
+        ];
+        $error = "Upload error: " . ($messages[$code] ?? "Unknown error ($code)");
+    }
     }
 }
 ?>

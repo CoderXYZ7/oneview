@@ -114,6 +114,73 @@ function delete_file($id) {
     save_data($new_data);
 }
 
+function send_file_range($path, $mime_type, $disposition_header) {
+    if (!file_exists($path)) {
+        header("HTTP/1.1 404 Not Found");
+        return;
+    }
+
+    $size = filesize($path);
+    $length = $size;
+    $start = 0;
+    $end = $size - 1;
+
+    header("Content-Type: $mime_type");
+    header("Accept-Ranges: bytes");
+    header($disposition_header);
+
+    if (isset($_SERVER['HTTP_RANGE'])) {
+        $c_start = $start;
+        $c_end = $end;
+
+        list(, $range) = explode('=', $_SERVER['HTTP_RANGE'], 2);
+        if (strpos($range, ',') !== false) {
+            header('HTTP/1.1 416 Requested Range Not Satisfiable');
+            header("Content-Range: bytes $start-$end/$size");
+            exit;
+        }
+
+        if ($range == '-') {
+            $c_start = $size - substr($range, 1);
+        } else {
+            $range = explode('-', $range);
+            $c_start = $range[0];
+            $c_end = (isset($range[1]) && is_numeric($range[1])) ? $range[1] : $size;
+        }
+        
+        $c_end = ($c_end > $end) ? $end : $c_end;
+        if ($c_start > $c_end || $c_start > $size - 1 || $c_end >= $size) {
+            header('HTTP/1.1 416 Requested Range Not Satisfiable');
+            header("Content-Range: bytes $start-$end/$size");
+            exit;
+        }
+        
+        $start = $c_start;
+        $end = $c_end;
+        $length = $end - $start + 1;
+        
+        fseek($fp = fopen($path, 'rb'), $start);
+        header('HTTP/1.1 206 Partial Content');
+        header("Content-Range: bytes $start-$end/$size");
+    } else {
+        $fp = fopen($path, 'rb'); // Open for full read
+    }
+
+    header("Content-Length: $length");
+    
+    // Output content in chunks
+    $buffer = 1024 * 8;
+    while (!feof($fp) && ($p = ftell($fp)) <= $end) {
+        if ($p + $buffer > $end) {
+            $buffer = $end - $p + 1;
+        }
+        set_time_limit(0);
+        echo fread($fp, $buffer);
+        flush();
+    }
+    fclose($fp);
+}
+
 function check_auth() {
     if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
         header('Location: login.php');

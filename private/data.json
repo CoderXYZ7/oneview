@@ -75,5 +75,16 @@
         "lock_on_access": false,
         "allow_download": true,
         "mime_type": "application\/octet-stream"
+    },
+    {
+        "id": "da0e3979cb0d0bad603c75f5be093d95",
+        "filename": "range_test.bin",
+        "path": "\/home\/maintainer\/Dev\/oneview\/private\/uploads\/da0e3979cb0d0bad603c75f5be093d95_range_test.bin",
+        "locked": false,
+        "lock_time": 1770322269,
+        "max_minutes": 0,
+        "lock_on_access": false,
+        "allow_download": true,
+        "mime_type": "text\/plain"
     }
 ]

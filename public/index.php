@@ -84,18 +84,17 @@ if ($action === 'stream') {
     }
 
     // Serve File
-    header('Content-Type: ' . $mime);
-    header('Content-Length: ' . filesize($path));
     
     // If download allowed, suggest filename. 
     // If NOT allowed (inline view), or media, don't force attachment.
     if ($allow_download && !$is_media && !$is_image && !$is_text) {
-         header('Content-Disposition: attachment; filename="' . $file['filename'] . '"');
+         $disposition = 'Content-Disposition: attachment; filename="' . $file['filename'] . '"';
     } else {
-         header('Content-Disposition: inline; filename="' . $file['filename'] . '"');
+         $disposition = 'Content-Disposition: inline; filename="' . $file['filename'] . '"';
     }
     
-    readfile($path);
+    // Use Range Support
+    send_file_range($path, $mime, $disposition);
     exit;
 }
 
