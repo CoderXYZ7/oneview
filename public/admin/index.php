@@ -76,6 +76,7 @@ if (isset($_GET['unlock'])) {
                         ?>
                     </td>
                     <td>
+                        <a href="edit.php?id=<?php echo $file['id']; ?>" class="btn btn-logout" style="background:#17a2b8;">Edit</a>
                         <?php if ($file['locked']): ?>
                             <a href="?unlock=<?php echo $file['id']; ?>" class="btn btn-unlock">Unlock</a>
                         <?php endif; ?>

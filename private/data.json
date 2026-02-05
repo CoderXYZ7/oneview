@@ -5,8 +5,53 @@
         "path": "\/home\/maintainer\/Dev\/oneview\/private\/uploads\/96c4fc736b64b1bc833a56a56a4ae19b_test.txt",
         "locked": true,
         "lock_time": 1770313377,
-        "max_minutes": 1,
+        "max_minutes": 0,
         "lock_on_access": true,
+        "mime_type": "text\/plain",
+        "allow_download": false
+    },
+    {
+        "id": "cae197c279ddec22d810d6e6dc0a212a",
+        "filename": "test.txt",
+        "path": "\/home\/maintainer\/Dev\/oneview\/private\/uploads\/cae197c279ddec22d810d6e6dc0a212a_test.txt",
+        "locked": false,
+        "lock_time": 0,
+        "max_minutes": 0,
+        "lock_on_access": true,
+        "allow_download": true,
         "mime_type": "text\/plain"
+    },
+    {
+        "id": "df62db9f1eeb7950d896df3e6e45c915",
+        "filename": "test.txt",
+        "path": "\/home\/maintainer\/Dev\/oneview\/private\/uploads\/df62db9f1eeb7950d896df3e6e45c915_test.txt",
+        "locked": true,
+        "lock_time": 1770315602,
+        "max_minutes": 0,
+        "lock_on_access": true,
+        "allow_download": false,
+        "mime_type": "text\/plain"
+    },
+    {
+        "id": "eef41c60c4ba70bc9352562b7d0ee6cd",
+        "filename": "test.txt",
+        "path": "\/home\/maintainer\/Dev\/oneview\/private\/uploads\/eef41c60c4ba70bc9352562b7d0ee6cd_test.txt",
+        "locked": false,
+        "lock_time": 1770315627,
+        "max_minutes": 0,
+        "lock_on_access": false,
+        "allow_download": false,
+        "mime_type": "text\/plain"
+    },
+    {
+        "id": "93c533ef70db6758eaca841a2547125f",
+        "filename": "test.bin",
+        "path": "\/home\/maintainer\/Dev\/oneview\/private\/uploads\/93c533ef70db6758eaca841a2547125f_test.bin",
+        "locked": false,
+        "lock_time": 1770315627,
+        "max_minutes": 0,
+        "lock_on_access": false,
+        "allow_download": true,
+        "mime_type": "application\/octet-stream"
     }
 ]

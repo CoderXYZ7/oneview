@@ -15,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
         if (move_uploaded_file($file['tmp_name'], $target_path)) {
             $lock_on_access = isset($_POST['lock_on_access']);
             $max_minutes = (int)$_POST['max_minutes'];
+            $allow_download = isset($_POST['allow_download']);
             
             $file_data = [
                 'id' => $id,
@@ -24,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
                 'lock_time' => 0,
                 'max_minutes' => $max_minutes,
                 'lock_on_access' => $lock_on_access,
+                'allow_download' => $allow_download,
                 'mime_type' => mime_content_type($target_path) // Store mime type for serving
             ];
             
@@ -73,6 +75,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
             <label>
                 <input type="checkbox" name="lock_on_access" value="1" checked>
                 Lock immediately on first access (page load / play)
+            </label>
+        </div>
+        
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="allow_download" value="1" checked>
+                Allow Download / Save
             </label>
         </div>
         

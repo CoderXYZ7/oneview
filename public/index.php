@@ -33,16 +33,25 @@ if ($file['lock_time'] > 0 && $file['max_minutes'] > 0) {
 }
 
 $mime = $file['mime_type'] ?? 'application/octet-stream';
-$is_media = strpos($mime, 'video/') === 0 || strpos($mime, 'audio/') === 0;
+$allow_download = isset($file['allow_download']) ? $file['allow_download'] : true;
+
+// Type Detection
+$is_video = strpos($mime, 'video/') === 0;
+$is_audio = strpos($mime, 'audio/') === 0;
+// Note: We differentiate media for player handling, but they share logic
+$is_media = $is_video || $is_audio;
+$is_image = strpos($mime, 'image/') === 0;
+$is_text  = strpos($mime, 'text/') === 0 || $mime === 'application/json' || $mime === 'application/xml';
 
 // --- ACTIONS ---
 
-// 1. Lock Trigger API (Called by JS on media end)
+// 1. Lock Trigger API
 if ($action === 'lock') {
-    if ($file['lock_on_access']) {
-        update_file_lock($id, true);
-        echo "Locked";
-    }
+    // Only lock if we have a rule that requires it (e.g. Media Ended, or just generic manual trigger)
+    // For now, we trust the client to trigger this only when appropriate (e.g. media end)
+    // or if we forced it.
+    update_file_lock($id, true); 
+    echo "Locked";
     exit;
 }
 
@@ -55,12 +64,18 @@ if ($action === 'stream') {
         update_file_lock($id, false, time());
     }
     
-    // Immediate Lock for Non-Media (One-time download)
+    // Security: Check Download Permission
+    // If download is NOT allowed, we only serve renderable types (Image, Text, Media).
+    // Binary files are blocked because they can't be viewed inline, only downloaded.
+    $renderable = $is_media || $is_image || $is_text;
+    if (!$allow_download && !$renderable) {
+        http_response_code(403);
+        die("Download forbidden.");
+    }
+
+    // Immediate Lock for Non-Media (One-time viewing)
     if (!$is_media && $file['lock_on_access']) {
         update_file_lock($id, true, time());
-        // NOTE: If we lock *before* serving, serving might be okay in this script execution, 
-        // but subsequent requests fail.
-        // For downloads, this is fine.
     }
 
     if (!file_exists($path)) {
@@ -72,21 +87,19 @@ if ($action === 'stream') {
     header('Content-Type: ' . $mime);
     header('Content-Length: ' . filesize($path));
     
-    if (!$is_media) {
-        // Force download for non-media to avoid browser preview locking issues
-        header('Content-Disposition: attachment; filename="' . $file['filename'] . '"');
+    // If download allowed, suggest filename. 
+    // If NOT allowed (inline view), or media, don't force attachment.
+    if ($allow_download && !$is_media && !$is_image && !$is_text) {
+         header('Content-Disposition: attachment; filename="' . $file['filename'] . '"');
+    } else {
+         header('Content-Disposition: inline; filename="' . $file['filename'] . '"');
     }
     
-    // Simple readfile for now. For large media, range support would be better 
-    // but requirements stick to "Favor simplicity" and "no frameworks".
-    // Standard readfile is blocking and memory intensive for large files, but simplest.
     readfile($path);
     exit;
 }
 
-// 3. Page View (Default)
-// Don't lock just on page load, wait for user interaction to be safe against crawlers/previews.
-
+// 3. Page View
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -95,50 +108,97 @@ if ($action === 'stream') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View File</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #222; color: #fff; margin: 0; }
-        .container { text-align: center; max-width: 90%; }
-        h1 { margin-bottom: 20px; }
-        .btn { display: inline-block; padding: 15px 30px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; font-size: 1.2rem; cursor: pointer; border: none; }
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #222; color: #fff; margin: 0; padding: 20px; box-sizing: border-box; }
+        .container { text-align: center; max-width: 100%; width: 100%; display: flex; flex-direction: column; align-items: center; }
+        h1 { margin-bottom: 20px; font-size: 1.5rem; word-break: break-all; }
+        .btn { display: inline-block; padding: 15px 30px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; font-size: 1.2rem; cursor: pointer; border: none; margin-top: 20px; }
         .btn:hover { background: #0056b3; }
-        video, audio { max-width: 100%; max-height: 80vh; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .viewer-content { max-width: 100%; box-shadow: 0 0 20px rgba(0,0,0,0.5); background: #333; padding: 10px; border-radius: 4px; }
+        img, video, audio { max-width: 100%; max-height: 80vh; display: block; }
+        pre { text-align: left; overflow: auto; max-height: 80vh; width: 100%; max-width: 800px; white-space: pre-wrap; margin: 0; }
+        .locked-msg { color: #aaa; margin-top: 20px; font-style: italic; }
     </style>
+    <?php if (!$allow_download): ?>
+    <script>
+        // Disable Right Click
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        // Disable Drag and Drop (simple)
+        document.addEventListener('dragstart', event => event.preventDefault());
+    </script>
+    <?php endif; ?>
 </head>
 <body>
     <div class="container">
-        <?php if ($is_media): ?>
-            <h1>Media Access</h1>
-            <!-- 
-               Autoplay is often blocked by browsers properly without intersection.
-               We let user click play.
-            -->
-            <?php 
-                $tag = strpos($mime, 'video/') === 0 ? 'video' : 'audio';
-            ?>
-            <<?php echo $tag; ?> controls id="mediaPlayer">
-                <source src="?id=<?php echo $id; ?>&action=stream" type="<?php echo $mime; ?>">
-                Your browser does not support the element.
-            </<?php echo $tag; ?>>
+        <h1><?php echo htmlspecialchars($file['filename']); ?></h1>
+
+        <?php if ($is_image): ?>
+            <!-- IMAGE VIEWER -->
+            <div class="viewer-content">
+                <img src="?id=<?php echo $id; ?>&action=stream" alt="File Content">
+            </div>
+
+        <?php elseif ($is_video): ?>
+            <!-- VIDEO VIEWER -->
+            <div class="viewer-content">
+                <video id="mediaPlayer" controls <?php echo $allow_download ? '' : 'controlsList="nodownload"'; ?> autoplay>
+                    <source src="?id=<?php echo $id; ?>&action=stream" type="<?php echo $mime; ?>">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
             
+        <?php elseif ($is_audio): ?>
+            <!-- AUDIO VIEWER -->
+            <div class="viewer-content">
+                <audio id="mediaPlayer" controls <?php echo $allow_download ? '' : 'controlsList="nodownload"'; ?> autoplay>
+                    <source src="?id=<?php echo $id; ?>&action=stream" type="<?php echo $mime; ?>">
+                    Your browser does not support the audio tag.
+                </audio>
+            </div>
+
+        <?php elseif ($is_text): ?>
+            <!-- TEXT VIEWER -->
+            <div class="viewer-content">
+                <?php
+                    // Fetch content for inline display (safely)
+                    // We use file_get_contents on the PATH because we are local.
+                    // Reading first 100KB to prevent memory issues with massive logs
+                    $content = file_get_contents($file['path'], false, null, 0, 102400); 
+                    if (filesize($file['path']) > 102400) $content .= "\n... (Truncated)";
+                ?>
+                <pre><?php echo htmlspecialchars($content); ?></pre>
+            </div>
+             <!-- Trigger one-time lock for text since it's "viewed" immediately if logic dictates -->
+             <!-- The stream logic handles lock if we fetch via stream, but here we read directly.
+                  So we must trigger lock if lock_on_access is ON. -->
+             <?php 
+                if ($file['lock_on_access']) {
+                    update_file_lock($id, true, time());
+                }
+             ?>
+
+        <?php else: ?>
+            <!-- GENERIC DOWNLOAD -->
+            <?php if ($allow_download): ?>
+                <p>This file type cannot be previewed.</p>
+                <a href="?id=<?php echo $id; ?>&action=stream" class="btn">Download File</a>
+            <?php else: ?>
+                <p>Preview unavailable and download is disabled.</p>
+            <?php endif; ?>
+            
+        <?php endif; ?>
+
+        <?php if ($is_media): ?>
             <script>
                 const player = document.getElementById('mediaPlayer');
                 const fileId = "<?php echo $id; ?>";
-                
-                // On Ended -> Lock
                 player.addEventListener('ended', function() {
                     fetch('?id=' + fileId + '&action=lock');
                 });
-                
-                // On Play -> Ideally we ensure lock timer starts if not already
-                // The stream request does this, but redundancy is good.
-                player.addEventListener('play', function() {
-                     // We rely on the stream request to start the timer
-                });
             </script>
-        <?php else: ?>
-            <h1>File Access</h1>
-            <p><?php echo htmlspecialchars($file['filename']); ?></p>
-            <p><strong>Warning:</strong> Accessing this file may lock it permanently.</p>
-            <a href="?id=<?php echo $id; ?>&action=stream" class="btn">View / Download File</a>
+        <?php endif; ?>
+        
+        <?php if ($file['lock_on_access'] && !$is_media): ?>
+            <p class="locked-msg">File locked after access.</p>
         <?php endif; ?>
     </div>
 </body>
