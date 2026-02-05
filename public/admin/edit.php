@@ -13,6 +13,9 @@ $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    error_log("edit.php: Received POST for " . $id);
+    error_log("edit.php: POST Data: " . print_r($_POST, true));
+
     $updates = [
         'lock_on_access' => isset($_POST['lock_on_access']),
         'allow_download' => isset($_POST['allow_download']),
@@ -22,6 +25,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     update_file_options($id, $updates);
     $success = "File updated successfully.";
     $file = get_file($id); // Reload
+} else {
+    error_log("edit.php: Loaded page for " . $id);
 }
 
 ?>

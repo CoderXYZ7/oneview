@@ -5,23 +5,39 @@ session_start();
 
 function load_data() {
     if (!file_exists(DATA_FILE)) {
+        error_log("load_data: DATA_FILE not found: " . DATA_FILE);
         return [];
     }
     $json = file_get_contents(DATA_FILE);
-    return json_decode($json, true) ?: [];
+    $data = json_decode($json, true);
+    if ($data === null) {
+        error_log("load_data: Failed to decode JSON. Error: " . json_last_error_msg());
+        error_log("load_data: Content: " . substr($json, 0, 100) . "...");
+        return [];
+    }
+    return $data;
 }
 
 function save_data($data) {
-    file_put_contents(DATA_FILE, json_encode($data, JSON_PRETTY_PRINT));
+    error_log("save_data: Saving " . count($data) . " items to " . DATA_FILE);
+    $result = file_put_contents(DATA_FILE, json_encode($data, JSON_PRETTY_PRINT));
+    if ($result === false) {
+        error_log("save_data: FAILED to write to " . DATA_FILE);
+    } else {
+        error_log("save_data: Wrote $result bytes.");
+    }
 }
 
 function get_file($id) {
+    error_log("get_file: Looking for ID " . $id);
     $data = load_data();
     foreach ($data as $file) {
         if ($file['id'] === $id) {
+            error_log("get_file: Found " . $id);
             return $file;
         }
     }
+    error_log("get_file: ID " . $id . " NOT FOUND");
     return null;
 }
 
@@ -47,16 +63,24 @@ function update_file_lock($id, $locked, $lock_time = null) {
 }
 
 function update_file_options($id, $updates) {
+    error_log("update_file_options: Updating " . $id . " with " . json_encode($updates));
     $data = load_data();
+    $found = false;
     foreach ($data as &$file) {
         if ($file['id'] === $id) {
+            $found = true;
             if (isset($updates['lock_on_access'])) $file['lock_on_access'] = $updates['lock_on_access'];
             if (isset($updates['max_minutes'])) $file['max_minutes'] = (int)$updates['max_minutes'];
             if (isset($updates['allow_download'])) $file['allow_download'] = $updates['allow_download'];
             break;
         }
     }
-    save_data($data);
+    
+    if (!$found) {
+        error_log("update_file_options: Failed to find file to update.");
+    } else {
+        save_data($data);
+    }
 }
 
 function check_auth() {

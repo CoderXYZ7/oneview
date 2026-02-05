@@ -53,5 +53,27 @@
         "lock_on_access": false,
         "allow_download": true,
         "mime_type": "application\/octet-stream"
+    },
+    {
+        "id": "6ed802d7e1af827fea72ef97d4ead9b6",
+        "filename": "test.txt",
+        "path": "\/home\/maintainer\/Dev\/oneview\/private\/uploads\/6ed802d7e1af827fea72ef97d4ead9b6_test.txt",
+        "locked": false,
+        "lock_time": 1770315988,
+        "max_minutes": 0,
+        "lock_on_access": false,
+        "allow_download": false,
+        "mime_type": "text\/plain"
+    },
+    {
+        "id": "495444ca67d06933192ef76d9379aa1e",
+        "filename": "test.bin",
+        "path": "\/home\/maintainer\/Dev\/oneview\/private\/uploads\/495444ca67d06933192ef76d9379aa1e_test.bin",
+        "locked": false,
+        "lock_time": 1770315988,
+        "max_minutes": 0,
+        "lock_on_access": false,
+        "allow_download": true,
+        "mime_type": "application\/octet-stream"
     }
 ]
