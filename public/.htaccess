@@ -1,0 +1,16 @@
+# Enable URL Rewriting (Optional, for future use)
+RewriteEngine On
+
+# PHP Upload Limits
+# Note: These only work if AllowOverride Options or All is set in Apache config
+# and if PHP is running as an Apache module. If running as FPM/CGI, 
+# a .user.ini file might be needed instead.
+
+php_value upload_max_filesize 100M
+php_value post_max_size 100M
+php_value memory_limit 128M
+php_value max_execution_time 300
+php_value max_input_time 300
+
+# Prevent directory listing
+Options -Indexes
