@@ -1,0 +1,12 @@
+[
+    {
+        "id": "96c4fc736b64b1bc833a56a56a4ae19b",
+        "filename": "test.txt",
+        "path": "\/home\/maintainer\/Dev\/oneview\/private\/uploads\/96c4fc736b64b1bc833a56a56a4ae19b_test.txt",
+        "locked": true,
+        "lock_time": 1770313377,
+        "max_minutes": 1,
+        "lock_on_access": true,
+        "mime_type": "text\/plain"
+    }
+]
