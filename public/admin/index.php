@@ -11,6 +11,14 @@ if (isset($_GET['unlock'])) {
     header('Location: index.php');
     exit;
 }
+
+// Handle Delete Action
+if (isset($_GET['delete'])) {
+    $id_to_delete = $_GET['delete'];
+    delete_file($id_to_delete);
+    header('Location: index.php');
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -80,6 +88,7 @@ if (isset($_GET['unlock'])) {
                         <?php if ($file['locked']): ?>
                             <a href="?unlock=<?php echo $file['id']; ?>" class="btn btn-unlock">Unlock</a>
                         <?php endif; ?>
+                         <a href="?delete=<?php echo $file['id']; ?>" class="btn btn-logout" style="background:#dc3545;" onclick="return confirm('Are you sure you want to delete this file?');">Delete</a>
                     </td>
                 </tr>
             <?php endforeach; ?>

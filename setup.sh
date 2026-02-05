@@ -25,9 +25,16 @@ chmod 777 "$PRIVATE_DIR"
 chmod 777 "$UPLOADS_DIR"
 chmod 666 "$DATA_FILE"
 
+# Setup Log File
+LOG_FILE="$PRIVATE_DIR/app.log"
+touch "$LOG_FILE"
+chmod 666 "$LOG_FILE"
+echo "Created app.log"
+
 echo "Permissions set:"
 ls -ld "$PRIVATE_DIR"
 ls -ld "$UPLOADS_DIR"
 ls -l "$DATA_FILE"
+ls -l "$LOG_FILE"
 
 echo "Setup complete."

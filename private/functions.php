@@ -83,6 +83,37 @@ function update_file_options($id, $updates) {
     }
 }
 
+function delete_file($id) {
+    error_log("delete_file: Deleting " . $id);
+    $data = load_data();
+    $new_data = [];
+    $found_path = null;
+    
+    foreach ($data as $file) {
+        if ($file['id'] === $id) {
+            $found_path = $file['path'];
+            continue; // Exclude from new data
+        }
+        $new_data[] = $file;
+    }
+    
+    if ($found_path) {
+        if (file_exists($found_path)) {
+            if (unlink($found_path)) {
+                error_log("delete_file: Deleted file " . $found_path);
+            } else {
+                error_log("delete_file: FAILED to delete file " . $found_path);
+            }
+        } else {
+            error_log("delete_file: File path not found on disk " . $found_path);
+        }
+    } else {
+        error_log("delete_file: ID " . $id . " not found in data.");
+    }
+    
+    save_data($new_data);
+}
+
 function check_auth() {
     if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
         header('Location: login.php');
